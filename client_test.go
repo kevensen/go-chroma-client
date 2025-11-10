@@ -44,8 +44,8 @@ func TestNewClientWithOptions(t *testing.T) {
 
 func TestVersion(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v1/version" {
-			t.Errorf("Expected path /api/v1/version, got %s", r.URL.Path)
+		if r.URL.Path != "/api/v2/version" {
+			t.Errorf("Expected path /api/v2/version, got %s", r.URL.Path)
 		}
 		if r.Method != http.MethodGet {
 			t.Errorf("Expected GET method, got %s", r.Method)
@@ -67,8 +67,8 @@ func TestVersion(t *testing.T) {
 
 func TestHeartbeat(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v1/heartbeat" {
-			t.Errorf("Expected path /api/v1/heartbeat, got %s", r.URL.Path)
+		if r.URL.Path != "/api/v2/heartbeat" {
+			t.Errorf("Expected path /api/v2/heartbeat, got %s", r.URL.Path)
 		}
 		if r.Method != http.MethodGet {
 			t.Errorf("Expected GET method, got %s", r.Method)
@@ -90,8 +90,8 @@ func TestHeartbeat(t *testing.T) {
 
 func TestReset(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v1/reset" {
-			t.Errorf("Expected path /api/v1/reset, got %s", r.URL.Path)
+		if r.URL.Path != "/api/v2/reset" {
+			t.Errorf("Expected path /api/v2/reset, got %s", r.URL.Path)
 		}
 		if r.Method != http.MethodPost {
 			t.Errorf("Expected POST method, got %s", r.Method)
@@ -113,8 +113,8 @@ func TestReset(t *testing.T) {
 
 func TestCreateTenant(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v1/tenants" {
-			t.Errorf("Expected path /api/v1/tenants, got %s", r.URL.Path)
+		if r.URL.Path != "/api/v2/tenants" {
+			t.Errorf("Expected path /api/v2/tenants, got %s", r.URL.Path)
 		}
 		if r.Method != http.MethodPost {
 			t.Errorf("Expected POST method, got %s", r.Method)
@@ -145,8 +145,8 @@ func TestCreateTenant(t *testing.T) {
 
 func TestGetTenant(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v1/tenants/test_tenant" {
-			t.Errorf("Expected path /api/v1/tenants/test_tenant, got %s", r.URL.Path)
+		if r.URL.Path != "/api/v2/tenants/test_tenant" {
+			t.Errorf("Expected path /api/v2/tenants/test_tenant, got %s", r.URL.Path)
 		}
 		if r.Method != http.MethodGet {
 			t.Errorf("Expected GET method, got %s", r.Method)
@@ -169,16 +169,11 @@ func TestGetTenant(t *testing.T) {
 
 func TestCreateDatabase(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v1/databases" {
-			t.Errorf("Expected path /api/v1/databases, got %s", r.URL.Path)
+		if r.URL.Path != "/api/v2/tenants/default_tenant/databases" {
+			t.Errorf("Expected path /api/v2/tenants/default_tenant/databases, got %s", r.URL.Path)
 		}
 		if r.Method != http.MethodPost {
 			t.Errorf("Expected POST method, got %s", r.Method)
-		}
-
-		tenant := r.URL.Query().Get("tenant")
-		if tenant != "default_tenant" {
-			t.Errorf("Expected tenant default_tenant, got %s", tenant)
 		}
 
 		var req CreateDatabase
@@ -193,7 +188,7 @@ func TestCreateDatabase(t *testing.T) {
 		json.NewEncoder(w).Encode(Database{
 			ID:     "db-123",
 			Name:   req.Name,
-			Tenant: tenant,
+			Tenant: "default_tenant",
 		})
 	}))
 	defer server.Close()
@@ -210,8 +205,8 @@ func TestCreateDatabase(t *testing.T) {
 
 func TestGetDatabase(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v1/databases/test_database" {
-			t.Errorf("Expected path /api/v1/databases/test_database, got %s", r.URL.Path)
+		if r.URL.Path != "/api/v2/tenants/default_tenant/databases/test_database" {
+			t.Errorf("Expected path /api/v2/tenants/default_tenant/databases/test_database, got %s", r.URL.Path)
 		}
 		if r.Method != http.MethodGet {
 			t.Errorf("Expected GET method, got %s", r.Method)
@@ -238,8 +233,8 @@ func TestGetDatabase(t *testing.T) {
 
 func TestListCollections(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v1/collections" {
-			t.Errorf("Expected path /api/v1/collections, got %s", r.URL.Path)
+		if r.URL.Path != "/api/v2/tenants/default_tenant/databases/default_database/collections" {
+			t.Errorf("Expected path /api/v2/tenants/default_tenant/databases/default_database/collections, got %s", r.URL.Path)
 		}
 		if r.Method != http.MethodGet {
 			t.Errorf("Expected GET method, got %s", r.Method)
@@ -265,8 +260,8 @@ func TestListCollections(t *testing.T) {
 
 func TestCountCollections(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v1/count_collections" {
-			t.Errorf("Expected path /api/v1/count_collections, got %s", r.URL.Path)
+		if r.URL.Path != "/api/v2/tenants/default_tenant/databases/default_database/collections_count" {
+			t.Errorf("Expected path /api/v2/tenants/default_tenant/databases/default_database/collections_count, got %s", r.URL.Path)
 		}
 		if r.Method != http.MethodGet {
 			t.Errorf("Expected GET method, got %s", r.Method)
@@ -289,8 +284,8 @@ func TestCountCollections(t *testing.T) {
 
 func TestCreateCollection(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v1/collections" {
-			t.Errorf("Expected path /api/v1/collections, got %s", r.URL.Path)
+		if r.URL.Path != "/api/v2/tenants/default_tenant/databases/default_database/collections" {
+			t.Errorf("Expected path /api/v2/tenants/default_tenant/databases/default_database/collections, got %s", r.URL.Path)
 		}
 		if r.Method != http.MethodPost {
 			t.Errorf("Expected POST method, got %s", r.Method)
@@ -328,8 +323,8 @@ func TestCreateCollection(t *testing.T) {
 
 func TestGetCollection(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v1/collections/test_collection" {
-			t.Errorf("Expected path /api/v1/collections/test_collection, got %s", r.URL.Path)
+		if r.URL.Path != "/api/v2/tenants/default_tenant/databases/default_database/collections/test_collection" {
+			t.Errorf("Expected path /api/v2/tenants/default_tenant/databases/default_database/collections/test_collection, got %s", r.URL.Path)
 		}
 		if r.Method != http.MethodGet {
 			t.Errorf("Expected GET method, got %s", r.Method)
@@ -355,8 +350,8 @@ func TestGetCollection(t *testing.T) {
 
 func TestDeleteCollection(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v1/collections/test_collection" {
-			t.Errorf("Expected path /api/v1/collections/test_collection, got %s", r.URL.Path)
+		if r.URL.Path != "/api/v2/tenants/default_tenant/databases/default_database/collections/test_collection" {
+			t.Errorf("Expected path /api/v2/tenants/default_tenant/databases/default_database/collections/test_collection, got %s", r.URL.Path)
 		}
 		if r.Method != http.MethodDelete {
 			t.Errorf("Expected DELETE method, got %s", r.Method)
@@ -379,8 +374,8 @@ func TestDeleteCollection(t *testing.T) {
 
 func TestUpdateCollection(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v1/collections/col-123" {
-			t.Errorf("Expected path /api/v1/collections/col-123, got %s", r.URL.Path)
+		if r.URL.Path != "/api/v2/collections/col-123" {
+			t.Errorf("Expected path /api/v2/collections/col-123, got %s", r.URL.Path)
 		}
 		if r.Method != http.MethodPut {
 			t.Errorf("Expected PUT method, got %s", r.Method)
@@ -417,8 +412,8 @@ func TestUpdateCollection(t *testing.T) {
 
 func TestAdd(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v1/collections/col-123/add" {
-			t.Errorf("Expected path /api/v1/collections/col-123/add, got %s", r.URL.Path)
+		if r.URL.Path != "/api/v2/collections/col-123/add" {
+			t.Errorf("Expected path /api/v2/collections/col-123/add, got %s", r.URL.Path)
 		}
 		if r.Method != http.MethodPost {
 			t.Errorf("Expected POST method, got %s", r.Method)
@@ -450,8 +445,8 @@ func TestAdd(t *testing.T) {
 
 func TestCount(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v1/collections/col-123/count" {
-			t.Errorf("Expected path /api/v1/collections/col-123/count, got %s", r.URL.Path)
+		if r.URL.Path != "/api/v2/collections/col-123/count" {
+			t.Errorf("Expected path /api/v2/collections/col-123/count, got %s", r.URL.Path)
 		}
 		if r.Method != http.MethodGet {
 			t.Errorf("Expected GET method, got %s", r.Method)
@@ -474,8 +469,8 @@ func TestCount(t *testing.T) {
 
 func TestQuery(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v1/collections/col-123/query" {
-			t.Errorf("Expected path /api/v1/collections/col-123/query, got %s", r.URL.Path)
+		if r.URL.Path != "/api/v2/collections/col-123/query" {
+			t.Errorf("Expected path /api/v2/collections/col-123/query, got %s", r.URL.Path)
 		}
 		if r.Method != http.MethodPost {
 			t.Errorf("Expected POST method, got %s", r.Method)

@@ -120,49 +120,49 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body interf
 // Version returns the ChromaDB version
 func (c *Client) Version(ctx context.Context) (string, error) {
 	var version string
-	err := c.doRequest(ctx, http.MethodGet, "/api/v1/version", nil, &version)
+	err := c.doRequest(ctx, http.MethodGet, "/api/v2/version", nil, &version)
 	return version, err
 }
 
 // Heartbeat checks if the ChromaDB server is alive
 func (c *Client) Heartbeat(ctx context.Context) (map[string]float64, error) {
 	var result map[string]float64
-	err := c.doRequest(ctx, http.MethodGet, "/api/v1/heartbeat", nil, &result)
+	err := c.doRequest(ctx, http.MethodGet, "/api/v2/heartbeat", nil, &result)
 	return result, err
 }
 
 // Reset resets the ChromaDB database (WARNING: This deletes all data)
 func (c *Client) Reset(ctx context.Context) (bool, error) {
 	var result bool
-	err := c.doRequest(ctx, http.MethodPost, "/api/v1/reset", nil, &result)
+	err := c.doRequest(ctx, http.MethodPost, "/api/v2/reset", nil, &result)
 	return result, err
 }
 
 // PreFlightChecks returns preflight check results
 func (c *Client) PreFlightChecks(ctx context.Context) (PreflightChecks, error) {
 	var result PreflightChecks
-	err := c.doRequest(ctx, http.MethodGet, "/api/v1/pre-flight-checks", nil, &result)
+	err := c.doRequest(ctx, http.MethodGet, "/api/v2/pre-flight-checks", nil, &result)
 	return result, err
 }
 
 // Root returns root endpoint information
 func (c *Client) Root(ctx context.Context) (map[string]float64, error) {
 	var result map[string]float64
-	err := c.doRequest(ctx, http.MethodGet, "/api/v1", nil, &result)
+	err := c.doRequest(ctx, http.MethodGet, "/api/v2", nil, &result)
 	return result, err
 }
 
 // CreateTenant creates a new tenant
 func (c *Client) CreateTenant(ctx context.Context, req CreateTenant) (*Tenant, error) {
 	var result Tenant
-	err := c.doRequest(ctx, http.MethodPost, "/api/v1/tenants", req, &result)
+	err := c.doRequest(ctx, http.MethodPost, "/api/v2/tenants", req, &result)
 	return &result, err
 }
 
 // GetTenant gets a tenant by name
 func (c *Client) GetTenant(ctx context.Context, name string) (*Tenant, error) {
 	var result Tenant
-	err := c.doRequest(ctx, http.MethodGet, fmt.Sprintf("/api/v1/tenants/%s", name), nil, &result)
+	err := c.doRequest(ctx, http.MethodGet, fmt.Sprintf("/api/v2/tenants/%s", name), nil, &result)
 	return &result, err
 }
 
@@ -173,7 +173,7 @@ func (c *Client) CreateDatabase(ctx context.Context, req CreateDatabase, tenant 
 		tenantName = tenant[0]
 	}
 
-	path := fmt.Sprintf("/api/v1/databases?tenant=%s", url.QueryEscape(tenantName))
+	path := fmt.Sprintf("/api/v2/tenants/%s/databases", url.QueryEscape(tenantName))
 	var result Database
 	err := c.doRequest(ctx, http.MethodPost, path, req, &result)
 	return &result, err
@@ -186,7 +186,7 @@ func (c *Client) GetDatabase(ctx context.Context, name string, tenant ...string)
 		tenantName = tenant[0]
 	}
 
-	path := fmt.Sprintf("/api/v1/databases/%s?tenant=%s", name, url.QueryEscape(tenantName))
+	path := fmt.Sprintf("/api/v2/tenants/%s/databases/%s", url.QueryEscape(tenantName), name)
 	var result Database
 	err := c.doRequest(ctx, http.MethodGet, path, nil, &result)
 	return &result, err
@@ -201,7 +201,7 @@ func (c *Client) ListCollections(ctx context.Context, tenant, database string) (
 		database = c.database
 	}
 
-	path := fmt.Sprintf("/api/v1/collections?tenant=%s&database=%s",
+	path := fmt.Sprintf("/api/v2/tenants/%s/databases/%s/collections",
 		url.QueryEscape(tenant), url.QueryEscape(database))
 
 	var result []Collection
@@ -218,7 +218,7 @@ func (c *Client) CountCollections(ctx context.Context, tenant, database string) 
 		database = c.database
 	}
 
-	path := fmt.Sprintf("/api/v1/count_collections?tenant=%s&database=%s",
+	path := fmt.Sprintf("/api/v2/tenants/%s/databases/%s/collections_count",
 		url.QueryEscape(tenant), url.QueryEscape(database))
 
 	var result int
@@ -235,7 +235,7 @@ func (c *Client) CreateCollection(ctx context.Context, req CreateCollection, ten
 		database = c.database
 	}
 
-	path := fmt.Sprintf("/api/v1/collections?tenant=%s&database=%s",
+	path := fmt.Sprintf("/api/v2/tenants/%s/databases/%s/collections",
 		url.QueryEscape(tenant), url.QueryEscape(database))
 
 	var result Collection
@@ -252,8 +252,8 @@ func (c *Client) GetCollection(ctx context.Context, name string, tenant, databas
 		database = c.database
 	}
 
-	path := fmt.Sprintf("/api/v1/collections/%s?tenant=%s&database=%s",
-		name, url.QueryEscape(tenant), url.QueryEscape(database))
+	path := fmt.Sprintf("/api/v2/tenants/%s/databases/%s/collections/%s",
+		url.QueryEscape(tenant), url.QueryEscape(database), name)
 
 	var result Collection
 	err := c.doRequest(ctx, http.MethodGet, path, nil, &result)
@@ -269,15 +269,15 @@ func (c *Client) DeleteCollection(ctx context.Context, name string, tenant, data
 		database = c.database
 	}
 
-	path := fmt.Sprintf("/api/v1/collections/%s?tenant=%s&database=%s",
-		name, url.QueryEscape(tenant), url.QueryEscape(database))
+	path := fmt.Sprintf("/api/v2/tenants/%s/databases/%s/collections/%s",
+		url.QueryEscape(tenant), url.QueryEscape(database), name)
 
 	return c.doRequest(ctx, http.MethodDelete, path, nil, nil)
 }
 
 // UpdateCollection updates a collection
 func (c *Client) UpdateCollection(ctx context.Context, collectionID string, req UpdateCollection) (*Collection, error) {
-	path := fmt.Sprintf("/api/v1/collections/%s", collectionID)
+	path := fmt.Sprintf("/api/v2/collections/%s", collectionID)
 	var result Collection
 	err := c.doRequest(ctx, http.MethodPut, path, req, &result)
 	return &result, err
@@ -285,25 +285,25 @@ func (c *Client) UpdateCollection(ctx context.Context, collectionID string, req 
 
 // Add adds embeddings to a collection
 func (c *Client) Add(ctx context.Context, collectionID string, req AddEmbedding) error {
-	path := fmt.Sprintf("/api/v1/collections/%s/add", collectionID)
+	path := fmt.Sprintf("/api/v2/collections/%s/add", collectionID)
 	return c.doRequest(ctx, http.MethodPost, path, req, nil)
 }
 
 // Update updates embeddings in a collection
 func (c *Client) Update(ctx context.Context, collectionID string, req UpdateEmbedding) error {
-	path := fmt.Sprintf("/api/v1/collections/%s/update", collectionID)
+	path := fmt.Sprintf("/api/v2/collections/%s/update", collectionID)
 	return c.doRequest(ctx, http.MethodPost, path, req, nil)
 }
 
 // Upsert upserts embeddings in a collection
 func (c *Client) Upsert(ctx context.Context, collectionID string, req AddEmbedding) error {
-	path := fmt.Sprintf("/api/v1/collections/%s/upsert", collectionID)
+	path := fmt.Sprintf("/api/v2/collections/%s/upsert", collectionID)
 	return c.doRequest(ctx, http.MethodPost, path, req, nil)
 }
 
 // Get gets embeddings from a collection
 func (c *Client) Get(ctx context.Context, collectionID string, req GetEmbedding) (*GetResult, error) {
-	path := fmt.Sprintf("/api/v1/collections/%s/get", collectionID)
+	path := fmt.Sprintf("/api/v2/collections/%s/get", collectionID)
 	var result GetResult
 	err := c.doRequest(ctx, http.MethodPost, path, req, &result)
 	return &result, err
@@ -311,7 +311,7 @@ func (c *Client) Get(ctx context.Context, collectionID string, req GetEmbedding)
 
 // Delete deletes embeddings from a collection
 func (c *Client) Delete(ctx context.Context, collectionID string, req DeleteEmbedding) ([]string, error) {
-	path := fmt.Sprintf("/api/v1/collections/%s/delete", collectionID)
+	path := fmt.Sprintf("/api/v2/collections/%s/delete", collectionID)
 	var result []string
 	err := c.doRequest(ctx, http.MethodPost, path, req, &result)
 	return result, err
@@ -319,7 +319,7 @@ func (c *Client) Delete(ctx context.Context, collectionID string, req DeleteEmbe
 
 // Count returns the number of embeddings in a collection
 func (c *Client) Count(ctx context.Context, collectionID string) (int, error) {
-	path := fmt.Sprintf("/api/v1/collections/%s/count", collectionID)
+	path := fmt.Sprintf("/api/v2/collections/%s/count", collectionID)
 	var result int
 	err := c.doRequest(ctx, http.MethodGet, path, nil, &result)
 	return result, err
@@ -327,7 +327,7 @@ func (c *Client) Count(ctx context.Context, collectionID string) (int, error) {
 
 // Query queries a collection for nearest neighbors
 func (c *Client) Query(ctx context.Context, collectionID string, req QueryEmbedding) (*QueryResult, error) {
-	path := fmt.Sprintf("/api/v1/collections/%s/query", collectionID)
+	path := fmt.Sprintf("/api/v2/collections/%s/query", collectionID)
 	var result QueryResult
 	err := c.doRequest(ctx, http.MethodPost, path, req, &result)
 	return &result, err
