@@ -13,6 +13,17 @@ A comprehensive Go client library for ChromaDB 2.0 API with full endpoint covera
 - ✅ Configurable client with custom HTTP client support
 - ✅ Context support for all operations
 - ✅ Comprehensive test coverage
+- ✅ **No automatic embedding generation - you provide your own embeddings**
+
+## Important: Embedding Generation
+
+**This library does NOT generate embeddings for you.** Creating vectorized embeddings from your documents is the responsibility of the library user. You must provide pre-computed embeddings when adding or querying documents.
+
+This design choice gives you full control over:
+- Which embedding model to use (OpenAI, Sentence Transformers, Cohere, etc.)
+- How embeddings are generated and cached
+- Cost management for API-based embedding services
+- Custom embedding strategies for your specific use case
 
 ## Installation
 
@@ -91,6 +102,12 @@ func main() {
     fmt.Printf("Query results: %+v\n", result)
 }
 ```
+
+For example, you might use:
+- [OpenAI's embedding API](https://platform.openai.com/docs/guides/embeddings)
+- [Sentence Transformers](https://www.sbert.net/) (via Python or other bindings)
+- [Cohere's Embed API](https://docs.cohere.com/docs/embeddings)
+- Any other embedding service or model of your choice
 
 ## API Reference
 
@@ -186,12 +203,15 @@ err := client.DeleteCollection(ctx, "my_collection", "", "")
 
 ### Document Operations
 
+**Note:** All document operations that work with embeddings require you to provide pre-computed embedding vectors. The `Embeddings` field is optional in the API, but you must provide embeddings if you want to perform similarity searches using the `Query` operation.
+
 ```go
-// Add documents
+// Add documents with pre-computed embeddings
+// You are responsible for generating these embeddings using your chosen model
 err := client.Add(ctx, collectionID, chromaclient.AddEmbedding{
     IDs:        []string{"id1", "id2"},
     Documents:  []string{"doc1", "doc2"},
-    Embeddings: [][]float64{{0.1, 0.2}, {0.3, 0.4}},
+    Embeddings: [][]float64{{0.1, 0.2}, {0.3, 0.4}}, // Your pre-computed embeddings
     Metadatas: []map[string]interface{}{
         {"key": "value1"},
         {"key": "value2"},
@@ -224,9 +244,10 @@ deletedIDs, err := client.Delete(ctx, collectionID, chromaclient.DeleteEmbedding
 // Count documents in a collection
 count, err := client.Count(ctx, collectionID)
 
-// Query for nearest neighbors
+// Query for nearest neighbors using pre-computed query embeddings
+// You must provide the query embedding vector(s)
 result, err := client.Query(ctx, collectionID, chromaclient.QueryEmbedding{
-    QueryEmbeddings: [][]float64{{0.1, 0.2, 0.3}},
+    QueryEmbeddings: [][]float64{{0.1, 0.2, 0.3}}, // Your pre-computed query embedding
     NResults:        10,
     Where: map[string]interface{}{
         "key": "value",
@@ -237,6 +258,88 @@ result, err := client.Query(ctx, collectionID, chromaclient.QueryEmbedding{
         chromaclient.IncludeDistances,
     },
 })
+```
+
+## Example: Using Your Own Embeddings
+
+Here's a complete example showing how to use this library with your own embedding generation:
+
+```go
+package main
+
+import (
+    "context"
+    "log"
+    chromaclient "github.com/kevensen/go-chroma-client"
+)
+
+// generateEmbedding is a placeholder for your embedding generation logic
+// In practice, you would call an embedding service or model here
+func generateEmbedding(text string) []float64 {
+    // TODO: Replace with actual embedding generation
+    // Examples:
+    // - Call OpenAI's embedding API
+    // - Use a local embedding model
+    // - Call Cohere, Anthropic, or other embedding services
+    
+    // This is just a dummy example - not real embeddings!
+    return []float64{0.1, 0.2, 0.3, 0.4, 0.5}
+}
+
+func main() {
+    client := chromaclient.NewClient(
+        chromaclient.WithBaseURL("http://localhost:8000"),
+    )
+    ctx := context.Background()
+
+    // Create a collection
+    collection, err := client.CreateCollection(ctx, chromaclient.CreateCollection{
+        Name: "my_documents",
+    }, "", "")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Documents to add
+    documents := []string{
+        "The quick brown fox jumps over the lazy dog",
+        "Machine learning is transforming technology",
+    }
+
+    // Generate embeddings for each document (YOUR RESPONSIBILITY)
+    embeddings := make([][]float64, len(documents))
+    for i, doc := range documents {
+        embeddings[i] = generateEmbedding(doc)
+    }
+
+    // Add documents with their embeddings
+    err = client.Add(ctx, collection.ID, chromaclient.AddEmbedding{
+        IDs:        []string{"doc1", "doc2"},
+        Documents:  documents,
+        Embeddings: embeddings, // Your pre-computed embeddings
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Query with a search query
+    queryText := "artificial intelligence"
+    queryEmbedding := generateEmbedding(queryText) // Generate embedding for query
+
+    results, err := client.Query(ctx, collection.ID, chromaclient.QueryEmbedding{
+        QueryEmbeddings: [][]float64{queryEmbedding}, // Your pre-computed query embedding
+        NResults:        5,
+        Include: []string{
+            chromaclient.IncludeDocuments,
+            chromaclient.IncludeDistances,
+        },
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    log.Printf("Query results: %+v\n", results)
+}
 ```
 
 ## Error Handling
@@ -252,6 +355,36 @@ if err != nil {
         fmt.Printf("Error: %v\n", err)
     }
 }
+```
+
+## Examples
+
+This repository includes several examples demonstrating different approaches to embedding generation:
+
+### Basic Example
+Location: `examples/basic/`
+
+A basic example showing all ChromaDB operations without embeddings for queries. Good for understanding the client API.
+
+### Simple Embeddings Example  
+Location: `examples/simple-embeddings/`
+
+A self-contained example using hash-based embeddings. **For demonstration only** - shows the integration pattern without requiring API keys. Not suitable for production (doesn't capture semantic meaning).
+
+### Real Embeddings with OpenAI
+Location: `examples/with-embeddings/`
+
+A production-ready example using OpenAI's embedding API. Shows:
+- Generating real semantic embeddings
+- Performing similarity searches
+- Best practices for embedding-based search
+
+**Requires**: OpenAI API key (set `OPENAI_API_KEY` environment variable)
+
+Run any example:
+```bash
+cd examples/with-embeddings
+go run main.go
 ```
 
 ## Testing
