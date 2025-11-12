@@ -83,8 +83,8 @@ func TestHeartbeat(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Heartbeat() error = %v", err)
 	}
-	if result["nanosecond heartbeat"] != 1234567890 {
-		t.Errorf("Expected heartbeat value 1234567890, got %f", result["nanosecond heartbeat"])
+	if result.NanosecondHeartbeat != 1234567890 {
+		t.Errorf("Expected heartbeat value 1234567890, got %d", result.NanosecondHeartbeat)
 	}
 }
 
@@ -374,8 +374,8 @@ func TestDeleteCollection(t *testing.T) {
 
 func TestUpdateCollection(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v2/collections/col-123" {
-			t.Errorf("Expected path /api/v2/collections/col-123, got %s", r.URL.Path)
+		if r.URL.Path != "/api/v2/tenants/default_tenant/databases/default_database/collections/col-123" {
+			t.Errorf("Expected path /api/v2/tenants/default_tenant/databases/default_database/collections/col-123, got %s", r.URL.Path)
 		}
 		if r.Method != http.MethodPut {
 			t.Errorf("Expected PUT method, got %s", r.Method)
@@ -389,31 +389,24 @@ func TestUpdateCollection(t *testing.T) {
 			t.Errorf("Expected new name updated_collection")
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(Collection{
-			ID:   "col-123",
-			Name: *req.NewName,
-		})
+		w.WriteHeader(http.StatusOK)
 	}))
 	defer server.Close()
 
 	client := NewClient(WithBaseURL(server.URL))
 	newName := "updated_collection"
-	collection, err := client.UpdateCollection(context.Background(), "col-123", UpdateCollection{
+	err := client.UpdateCollection(context.Background(), "col-123", UpdateCollection{
 		NewName: &newName,
-	})
+	}, "", "")
 	if err != nil {
 		t.Fatalf("UpdateCollection() error = %v", err)
-	}
-	if collection.Name != "updated_collection" {
-		t.Errorf("Expected collection name updated_collection, got %s", collection.Name)
 	}
 }
 
 func TestAdd(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v2/collections/col-123/add" {
-			t.Errorf("Expected path /api/v2/collections/col-123/add, got %s", r.URL.Path)
+		if r.URL.Path != "/api/v2/tenants/default_tenant/databases/default_database/collections/col-123/add" {
+			t.Errorf("Expected path /api/v2/tenants/default_tenant/databases/default_database/collections/col-123/add, got %s", r.URL.Path)
 		}
 		if r.Method != http.MethodPost {
 			t.Errorf("Expected POST method, got %s", r.Method)
@@ -437,7 +430,7 @@ func TestAdd(t *testing.T) {
 	err := client.Add(context.Background(), "col-123", AddEmbedding{
 		IDs:       []string{"id1", "id2"},
 		Documents: []string{"doc1", "doc2"},
-	})
+	}, "", "")
 	if err != nil {
 		t.Fatalf("Add() error = %v", err)
 	}
@@ -445,8 +438,8 @@ func TestAdd(t *testing.T) {
 
 func TestCount(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v2/collections/col-123/count" {
-			t.Errorf("Expected path /api/v2/collections/col-123/count, got %s", r.URL.Path)
+		if r.URL.Path != "/api/v2/tenants/default_tenant/databases/default_database/collections/col-123/count" {
+			t.Errorf("Expected path /api/v2/tenants/default_tenant/databases/default_database/collections/col-123/count, got %s", r.URL.Path)
 		}
 		if r.Method != http.MethodGet {
 			t.Errorf("Expected GET method, got %s", r.Method)
@@ -458,7 +451,7 @@ func TestCount(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(WithBaseURL(server.URL))
-	count, err := client.Count(context.Background(), "col-123")
+	count, err := client.Count(context.Background(), "col-123", "", "")
 	if err != nil {
 		t.Fatalf("Count() error = %v", err)
 	}
@@ -469,8 +462,8 @@ func TestCount(t *testing.T) {
 
 func TestQuery(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v2/collections/col-123/query" {
-			t.Errorf("Expected path /api/v2/collections/col-123/query, got %s", r.URL.Path)
+		if r.URL.Path != "/api/v2/tenants/default_tenant/databases/default_database/collections/col-123/query" {
+			t.Errorf("Expected path /api/v2/tenants/default_tenant/databases/default_database/collections/col-123/query, got %s", r.URL.Path)
 		}
 		if r.Method != http.MethodPost {
 			t.Errorf("Expected POST method, got %s", r.Method)
@@ -494,7 +487,7 @@ func TestQuery(t *testing.T) {
 	result, err := client.Query(context.Background(), "col-123", QueryEmbedding{
 		QueryEmbeddings: [][]float64{{0.1, 0.2, 0.3}},
 		NResults:        10,
-	})
+	}, "", "")
 	if err != nil {
 		t.Fatalf("Query() error = %v", err)
 	}

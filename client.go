@@ -125,10 +125,10 @@ func (c *Client) Version(ctx context.Context) (string, error) {
 }
 
 // Heartbeat checks if the ChromaDB server is alive
-func (c *Client) Heartbeat(ctx context.Context) (map[string]float64, error) {
-	var result map[string]float64
+func (c *Client) Heartbeat(ctx context.Context) (*HeartbeatResponse, error) {
+	var result HeartbeatResponse
 	err := c.doRequest(ctx, http.MethodGet, "/api/v2/heartbeat", nil, &result)
-	return result, err
+	return &result, err
 }
 
 // Reset resets the ChromaDB database (WARNING: This deletes all data)
@@ -160,8 +160,8 @@ func (c *Client) CreateTenant(ctx context.Context, req CreateTenant) (*Tenant, e
 }
 
 // GetTenant gets a tenant by name
-func (c *Client) GetTenant(ctx context.Context, name string) (*Tenant, error) {
-	var result Tenant
+func (c *Client) GetTenant(ctx context.Context, name string) (*GetTenantResponse, error) {
+	var result GetTenantResponse
 	err := c.doRequest(ctx, http.MethodGet, fmt.Sprintf("/api/v2/tenants/%s", name), nil, &result)
 	return &result, err
 }
@@ -276,58 +276,118 @@ func (c *Client) DeleteCollection(ctx context.Context, name string, tenant, data
 }
 
 // UpdateCollection updates a collection
-func (c *Client) UpdateCollection(ctx context.Context, collectionID string, req UpdateCollection) (*Collection, error) {
-	path := fmt.Sprintf("/api/v2/collections/%s", collectionID)
-	var result Collection
-	err := c.doRequest(ctx, http.MethodPut, path, req, &result)
-	return &result, err
+func (c *Client) UpdateCollection(ctx context.Context, collectionID string, req UpdateCollection, tenant, database string) error {
+	if tenant == "" {
+		tenant = c.tenant
+	}
+	if database == "" {
+		database = c.database
+	}
+
+	path := fmt.Sprintf("/api/v2/tenants/%s/databases/%s/collections/%s",
+		url.QueryEscape(tenant), url.QueryEscape(database), collectionID)
+	return c.doRequest(ctx, http.MethodPut, path, req, nil)
 }
 
 // Add adds embeddings to a collection
-func (c *Client) Add(ctx context.Context, collectionID string, req AddEmbedding) error {
-	path := fmt.Sprintf("/api/v2/collections/%s/add", collectionID)
+func (c *Client) Add(ctx context.Context, collectionID string, req AddEmbedding, tenant, database string) error {
+	if tenant == "" {
+		tenant = c.tenant
+	}
+	if database == "" {
+		database = c.database
+	}
+
+	path := fmt.Sprintf("/api/v2/tenants/%s/databases/%s/collections/%s/add",
+		url.QueryEscape(tenant), url.QueryEscape(database), collectionID)
 	return c.doRequest(ctx, http.MethodPost, path, req, nil)
 }
 
 // Update updates embeddings in a collection
-func (c *Client) Update(ctx context.Context, collectionID string, req UpdateEmbedding) error {
-	path := fmt.Sprintf("/api/v2/collections/%s/update", collectionID)
+func (c *Client) Update(ctx context.Context, collectionID string, req UpdateEmbedding, tenant, database string) error {
+	if tenant == "" {
+		tenant = c.tenant
+	}
+	if database == "" {
+		database = c.database
+	}
+
+	path := fmt.Sprintf("/api/v2/tenants/%s/databases/%s/collections/%s/update",
+		url.QueryEscape(tenant), url.QueryEscape(database), collectionID)
 	return c.doRequest(ctx, http.MethodPost, path, req, nil)
 }
 
 // Upsert upserts embeddings in a collection
-func (c *Client) Upsert(ctx context.Context, collectionID string, req AddEmbedding) error {
-	path := fmt.Sprintf("/api/v2/collections/%s/upsert", collectionID)
+func (c *Client) Upsert(ctx context.Context, collectionID string, req AddEmbedding, tenant, database string) error {
+	if tenant == "" {
+		tenant = c.tenant
+	}
+	if database == "" {
+		database = c.database
+	}
+
+	path := fmt.Sprintf("/api/v2/tenants/%s/databases/%s/collections/%s/upsert",
+		url.QueryEscape(tenant), url.QueryEscape(database), collectionID)
 	return c.doRequest(ctx, http.MethodPost, path, req, nil)
 }
 
 // Get gets embeddings from a collection
-func (c *Client) Get(ctx context.Context, collectionID string, req GetEmbedding) (*GetResult, error) {
-	path := fmt.Sprintf("/api/v2/collections/%s/get", collectionID)
+func (c *Client) Get(ctx context.Context, collectionID string, req GetEmbedding, tenant, database string) (*GetResult, error) {
+	if tenant == "" {
+		tenant = c.tenant
+	}
+	if database == "" {
+		database = c.database
+	}
+
+	path := fmt.Sprintf("/api/v2/tenants/%s/databases/%s/collections/%s/get",
+		url.QueryEscape(tenant), url.QueryEscape(database), collectionID)
 	var result GetResult
 	err := c.doRequest(ctx, http.MethodPost, path, req, &result)
 	return &result, err
 }
 
 // Delete deletes embeddings from a collection
-func (c *Client) Delete(ctx context.Context, collectionID string, req DeleteEmbedding) ([]string, error) {
-	path := fmt.Sprintf("/api/v2/collections/%s/delete", collectionID)
-	var result []string
-	err := c.doRequest(ctx, http.MethodPost, path, req, &result)
-	return result, err
+func (c *Client) Delete(ctx context.Context, collectionID string, req DeleteEmbedding, tenant, database string) error {
+	if tenant == "" {
+		tenant = c.tenant
+	}
+	if database == "" {
+		database = c.database
+	}
+
+	path := fmt.Sprintf("/api/v2/tenants/%s/databases/%s/collections/%s/delete",
+		url.QueryEscape(tenant), url.QueryEscape(database), collectionID)
+	return c.doRequest(ctx, http.MethodPost, path, req, nil)
 }
 
 // Count returns the number of embeddings in a collection
-func (c *Client) Count(ctx context.Context, collectionID string) (int, error) {
-	path := fmt.Sprintf("/api/v2/collections/%s/count", collectionID)
+func (c *Client) Count(ctx context.Context, collectionID string, tenant, database string) (int, error) {
+	if tenant == "" {
+		tenant = c.tenant
+	}
+	if database == "" {
+		database = c.database
+	}
+
+	path := fmt.Sprintf("/api/v2/tenants/%s/databases/%s/collections/%s/count",
+		url.QueryEscape(tenant), url.QueryEscape(database), collectionID)
 	var result int
 	err := c.doRequest(ctx, http.MethodGet, path, nil, &result)
 	return result, err
 }
 
 // Query queries a collection for nearest neighbors
-func (c *Client) Query(ctx context.Context, collectionID string, req QueryEmbedding) (*QueryResult, error) {
-	path := fmt.Sprintf("/api/v2/collections/%s/query", collectionID)
+func (c *Client) Query(ctx context.Context, collectionID string, req QueryEmbedding, tenant, database string) (*QueryResult, error) {
+	if tenant == "" {
+		tenant = c.tenant
+	}
+	if database == "" {
+		database = c.database
+	}
+
+	path := fmt.Sprintf("/api/v2/tenants/%s/databases/%s/collections/%s/query",
+		url.QueryEscape(tenant), url.QueryEscape(database), collectionID)
 	var result QueryResult
 	err := c.doRequest(ctx, http.MethodPost, path, req, &result)
 	return &result, err

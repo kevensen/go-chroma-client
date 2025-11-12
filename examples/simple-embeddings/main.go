@@ -192,14 +192,14 @@ func main() {
 		Documents:  documents,
 		Embeddings: embeddings,
 		Metadatas:  metadatas,
-	})
+	}, "", "")
 	if err != nil {
 		log.Fatalf("Failed to add documents: %v", err)
 	}
 	fmt.Printf("Successfully added %d documents\n", len(documents))
 
 	// Count documents
-	count, err := chromaClient.Count(ctx, collection.ID)
+	count, err := chromaClient.Count(ctx, collection.ID, "", "")
 	if err != nil {
 		log.Fatalf("Failed to count documents: %v", err)
 	}
@@ -215,12 +215,12 @@ func main() {
 	results, err := chromaClient.Query(ctx, collection.ID, chromaclient.QueryEmbedding{
 		QueryEmbeddings: [][]float64{queryEmbedding},
 		NResults:        3,
-		Include: []string{
+		Include: []chromaclient.Include{
 			chromaclient.IncludeDocuments,
 			chromaclient.IncludeDistances,
 			chromaclient.IncludeMetadatas,
 		},
-	})
+	}, "", "")
 	if err != nil {
 		log.Fatalf("Failed to query: %v", err)
 	}
@@ -246,11 +246,11 @@ func main() {
 		Where: map[string]interface{}{
 			"category": "programming", // Only search programming documents
 		},
-		Include: []string{
+		Include: []chromaclient.Include{
 			chromaclient.IncludeDocuments,
 			chromaclient.IncludeDistances,
 		},
-	})
+	}, "", "")
 	if err != nil {
 		log.Fatalf("Failed to query: %v", err)
 	}

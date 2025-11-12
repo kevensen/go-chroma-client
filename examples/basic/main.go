@@ -85,14 +85,14 @@ func main() {
 			{"category": "tech", "topic": "AI"},
 			{"category": "tech", "topic": "database"},
 		},
-	})
+	}, "", "")
 	if err != nil {
 		log.Fatalf("Failed to add documents: %v", err)
 	}
 	fmt.Println("Added 3 documents")
 
 	// Count documents
-	count, err := client.Count(ctx, collection.ID)
+	count, err := client.Count(ctx, collection.ID, "", "")
 	if err != nil {
 		log.Fatalf("Failed to count documents: %v", err)
 	}
@@ -102,11 +102,11 @@ func main() {
 	fmt.Println("\n=== Retrieving Documents ===")
 	getResult, err := client.Get(ctx, collection.ID, chromaclient.GetEmbedding{
 		IDs: []string{"doc1", "doc2"},
-		Include: []string{
+		Include: []chromaclient.Include{
 			chromaclient.IncludeDocuments,
 			chromaclient.IncludeMetadatas,
 		},
-	})
+	}, "", "")
 	if err != nil {
 		log.Fatalf("Failed to get documents: %v", err)
 	}
@@ -128,7 +128,7 @@ func main() {
 		Metadatas: []map[string]interface{}{
 			{"category": "proverb", "length": "short", "updated": true},
 		},
-	})
+	}, "", "")
 	if err != nil {
 		log.Fatalf("Failed to update document: %v", err)
 	}
@@ -142,14 +142,14 @@ func main() {
 		Metadatas: []map[string]interface{}{
 			{"category": "demo", "method": "upsert"},
 		},
-	})
+	}, "", "")
 	if err != nil {
 		log.Fatalf("Failed to upsert document: %v", err)
 	}
 	fmt.Println("Upserted doc4")
 
 	// Count again
-	count, err = client.Count(ctx, collection.ID)
+	count, err = client.Count(ctx, collection.ID, "", "")
 	if err != nil {
 		log.Fatalf("Failed to count documents: %v", err)
 	}
@@ -157,16 +157,16 @@ func main() {
 
 	// Delete a document
 	fmt.Println("\n=== Deleting Document ===")
-	deletedIDs, err := client.Delete(ctx, collection.ID, chromaclient.DeleteEmbedding{
+	err = client.Delete(ctx, collection.ID, chromaclient.DeleteEmbedding{
 		IDs: []string{"doc4"},
-	})
+	}, "", "")
 	if err != nil {
 		log.Fatalf("Failed to delete document: %v", err)
 	}
-	fmt.Printf("Deleted documents: %v\n", deletedIDs)
+	fmt.Println("Deleted doc4")
 
 	// Final count
-	count, err = client.Count(ctx, collection.ID)
+	count, err = client.Count(ctx, collection.ID, "", "")
 	if err != nil {
 		log.Fatalf("Failed to count documents: %v", err)
 	}
@@ -174,17 +174,17 @@ func main() {
 
 	// 5. Collection update
 	fmt.Println("\n=== Updating Collection ===")
-	updatedCollection, err := client.UpdateCollection(ctx, collection.ID, chromaclient.UpdateCollection{
+	err = client.UpdateCollection(ctx, collection.ID, chromaclient.UpdateCollection{
 		NewMetadata: map[string]interface{}{
 			"description": "Example collection for demo - Updated",
 			"created_by":  "go-chroma-client",
 			"updated":     true,
 		},
-	})
+	}, "", "")
 	if err != nil {
 		log.Fatalf("Failed to update collection: %v", err)
 	}
-	fmt.Printf("Updated collection metadata: %v\n", updatedCollection.Metadata)
+	fmt.Println("Updated collection metadata")
 
 	// 6. Cleanup (optional - uncomment to delete the collection)
 	// fmt.Println("\n=== Cleanup ===")
